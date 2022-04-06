@@ -2,6 +2,8 @@ const express = require('express');
 const cors = require('cors');
 
 const { v4: uuidv4, validate } = require('uuid');
+// const { use } = require('express/lib/application');
+// const { default: regex } = require('uuid/dist/regex');
 
 const app = express();
 app.use(express.json());
@@ -11,14 +13,65 @@ const users = [];
 
 function checksExistsUserAccount(request, response, next) {
   // Complete aqui
+  const {username} = request.headers;
+
+  const existUser = users.find(user=> user.username === username);
+
+  if(!existUser){
+    return response.status(404).json({error: `Username nao encontrado`});
+  }
+
+  request.user = existUser;
+
+  next();
+
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
   // Complete aqui
+ const {user} = request;
+
+// const findUser = users.find(user=> user.)
+  if(!user.pro && user.todos.length>=10){
+    // return response.status(404).json({msg: `Usuario não é pro mas tem menos de 10 todos`})
+    console.log("Usuario não é pro e tem mais de 10 todos, ERROR");
+    return response.status(404).json({error: `Usuario não é pro e tem mais de 10 todos, ERROR`})
+  }
+
+    console.log("Usuario é pro, ou tem menos de 10 todos");
+    next();
+
 }
 
 function checksTodoExists(request, response, next) {
   // Complete aqui
+  const {username} = request.headers;
+  const {id} = request.params;  //para pegar o ID do Todos
+
+  const findUser = users.find(user=> user.username === username);
+  if(!findUser){
+    console.log("usuario nao encontrado, checksTodoExists");
+    return response.status(404).json({error: `Usuario nao encontrado`});
+  }
+
+  const checkIdUser = findUser.todos.find(todo=>todo.id=== id);
+
+  if(!checkIdUser){
+    return response.status(404).json({error: `Id nao encontrado`});
+  }
+
+  // Validar se é um uuidv4  conferir com fael
+  const validateId = new RegExp(/^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i);
+  
+
+  if(validateId.test(checkIdUser)){
+    return response.status(404).json({error: `Error, ID invalido, não é um uuid`})
+  }
+  
+  
+  request.todos = checkIdUser;
+  request.user = findUser;
+  next();
 }
 
 function findUserById(request, response, next) {
@@ -47,12 +100,16 @@ app.post('/users', (request, response) => {
   return response.status(201).json(user);
 });
 
+
+//ROTA A MAIS
 app.get('/users/:id', findUserById, (request, response) => {
   const { user } = request;
 
   return response.json(user);
 });
 
+
+///ROTA A MAIS
 app.patch('/users/:id/pro', findUserById, (request, response) => {
   const { user } = request;
 
