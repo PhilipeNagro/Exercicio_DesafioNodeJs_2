@@ -1,5 +1,3 @@
 const { app } = require('./');
 
-app.listen(3333,()=>{
-    console.log("Running <3")
-});
+app.listen(3333);
