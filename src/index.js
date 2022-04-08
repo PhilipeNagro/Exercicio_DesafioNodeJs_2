@@ -7,22 +7,78 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+const tarefaPronta = []
+
 const users = [];
+
+
+
 
 function checksExistsUserAccount(request, response, next) {
   // Complete aqui
+  const {username} = request.headers;
+
+  const existUser = users.find(user=> user.username === username);
+
+  if(!existUser){
+    return response.status(404).json({error: `Username nao encontrado, mdw1`});
+  }
+
+  request.user = existUser;
+
+  next();
+
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
   // Complete aqui
+ const {user} = request;
+
+  if(!user.pro && user.todos.length>=10){
+    return response.status(403).json({error: `Usuario não é pro e tem mais de 10 todos, ERROR`})
+  }
+
+    next();
 }
 
 function checksTodoExists(request, response, next) {
   // Complete aqui
+  const {username} = request.headers;
+  const {id} = request.params;  
+
+  const findUser = users.find(user=> user.username === username);
+  if(!findUser){
+    return response.status(404).json({error: `Usuario nao encontrado`});
+  }
+
+
+  if(!validate(id)){
+    return response.status(400).json({error: `Error, ID invalido, não é um uuid , checksTodoExists`})
+  }
+  
+  
+  const checkIdUser = findUser.todos.find(todo=> todo.id=== id);
+  if(!checkIdUser){
+    return response.status(404).json({error: `Id nao encontrado`});
+  }
+  request.user = findUser;
+  request.todo = checkIdUser;
+  next();
+
 }
 
 function findUserById(request, response, next) {
   // Complete aqui
+  const {id} = request.params; 
+
+  const findUserID = users.find(user=> user.id === id);
+
+  if(!findUserID){
+    return response.status(404).json({error: ` Username nao encontrado pelo ID`});
+  }
+
+  request.user = findUserID;
+  next();
 }
 
 app.post('/users', (request, response) => {
@@ -47,11 +103,13 @@ app.post('/users', (request, response) => {
   return response.status(201).json(user);
 });
 
+
 app.get('/users/:id', findUserById, (request, response) => {
   const { user } = request;
 
   return response.json(user);
 });
+
 
 app.patch('/users/:id/pro', findUserById, (request, response) => {
   const { user } = request;
@@ -108,7 +166,6 @@ app.patch('/todos/:id/done', checksTodoExists, (request, response) => {
 
 app.delete('/todos/:id', checksExistsUserAccount, checksTodoExists, (request, response) => {
   const { user, todo } = request;
-
   const todoIndex = user.todos.indexOf(todo);
 
   if (todoIndex === -1) {
