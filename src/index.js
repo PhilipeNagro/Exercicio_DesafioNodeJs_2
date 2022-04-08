@@ -9,7 +9,28 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
-const users = [];
+const tarefaPronta = [
+  {
+    "id": "19f2cb05-0c0f-428b-9846-e61276f29ffb",
+    "title": "Tarefa exemplo",
+    "done": false,
+    "deadline": "2021-02-27T00:00:00.000Z",
+    "created_at": "2022-03-24T14:17:53.401Z"
+  }
+]
+
+const users = [
+  {
+    "id": "64cf7d46-8127-4d69-88b6-f2c50dd26c96",
+    "name": "PH",
+    "username": "PH1",
+    "pro": false,
+    "todos": tarefaPronta
+  }
+];
+
+
+
 
 function checksExistsUserAccount(request, response, next) {
   // Complete aqui
@@ -18,24 +39,23 @@ function checksExistsUserAccount(request, response, next) {
   const existUser = users.find(user=> user.username === username);
 
   if(!existUser){
-    return response.status(404).json({error: `Username nao encontrado`});
+    return response.status(404).json({error: `Username nao encontrado, mdw1`});
   }
 
   request.user = existUser;
 
   next();
-
+//check
 }
 
 function checksCreateTodosUserAvailability(request, response, next) {
   // Complete aqui
  const {user} = request;
-
 // const findUser = users.find(user=> user.)
   if(!user.pro && user.todos.length>=10){
     // return response.status(404).json({msg: `Usuario não é pro mas tem menos de 10 todos`})
     console.log("Usuario não é pro e tem mais de 10 todos, ERROR");
-    return response.status(404).json({error: `Usuario não é pro e tem mais de 10 todos, ERROR`})
+    return response.status(403).json({error: `Usuario não é pro e tem mais de 10 todos, ERROR`})
   }
 
     console.log("Usuario é pro, ou tem menos de 10 todos");
@@ -53,29 +73,43 @@ function checksTodoExists(request, response, next) {
     console.log("usuario nao encontrado, checksTodoExists");
     return response.status(404).json({error: `Usuario nao encontrado`});
   }
-
-  const checkIdUser = findUser.todos.find(todo=>todo.id=== id);
-
+  console.log(validate(id));
+  if(!validate(id)){
+    return response.status(400).json({error: `Error, ID invalido, não é um uuid , checksTodoExists`})
+  }
+  
+  
+  const checkIdUser = findUser.todos.find(todo=> todo.id=== id);
   if(!checkIdUser){
     return response.status(404).json({error: `Id nao encontrado`});
   }
 
   // Validar se é um uuidv4  conferir com fael
-  const validateId = new RegExp(/^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i);
-  
-
-  if(validateId.test(checkIdUser)){
-    return response.status(404).json({error: `Error, ID invalido, não é um uuid`})
-  }
+  // MODIFICAR aqui de acordo com a documentação 
+ 
+  // const validateId = new RegExp(/^[0-9A-F]{8}-[0-9A-F]{4}-[4][0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$/i);
   
   
-  request.todos = checkIdUser;
+  
   request.user = findUser;
+  request.todo = checkIdUser;
   next();
+
+  //Check
 }
 
 function findUserById(request, response, next) {
   // Complete aqui
+  const {id} = request.params; //ID DO USUARIO
+
+  const findUserID = users.find(user=> user.id === id);
+
+  if(!findUserID){
+    return response.status(404).json({error: ` Username nao encontrado pelo ID`});
+  }
+
+  request.user = findUserID;
+  next();
 }
 
 app.post('/users', (request, response) => {
